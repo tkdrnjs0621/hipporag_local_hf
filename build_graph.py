@@ -77,4 +77,4 @@ if __name__=="__main__":
         json.dump([[str(k[0]),str(k[1]),str(v)]for k,v in doc_entity_map.items()],f)
 
     with open(args.graph_save_path,'w') as f:
-        json.dump([[str(k[0]),str(k[1]),str(v)]for k,v in doc_entity_map.items()],f)
+        json.dump([[str(k[0]),str(k[1]),str(v)]for k,v in graph.items()],f)

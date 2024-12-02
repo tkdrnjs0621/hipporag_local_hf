@@ -40,7 +40,9 @@ def get_sorted_indices(search_space, query, model, tokenizer):
         search_space = search_space / search_space.norm(dim=1, keepdim=True)
         similarities = torch.matmul(search_space, query_embedding.T).squeeze()
         ranked_indices = torch.argsort(similarities, descending=True).cpu().numpy()
-        return ranked_indices
+        sorted_similarities = similarities[ranked_indices].cpu().numpy()
+        
+        return ranked_indices, sorted_similarities
 
 def map_nearest(row,space,model,tokenizer,topk):
     ne=[]
@@ -54,22 +56,43 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Full Run")
     parser.add_argument('--dataset_entity_path', type=str, default='data/hotpotqa_entity_number.json')
     parser.add_argument("--entity_vector_path", type=str, default="data/hotpotqa_entity_vector.pt", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
-    parser.add_argument("--relevant_entity_save_path", type=str, default="data/hotpotqa_query_ner_relevant.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
-    parser.add_argument("--topk", type=str, default="facebook/contriever", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+
+    parser.add_argument('--graph_path', type=str, default='data/hotpotqa_graph_nonsym.json')
+    parser.add_argument("--graph_save_path", type=str, default="data/hotpotqa_graph_sym.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--topk", type=int, default=6, help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     
     args = parser.parse_args()
     with open(args.dataset_entity_path, 'r') as f:
         list_entities = json.loads(f)
 
+
+    with open(args.graph_path, 'r') as f:
+        list_graphs = json.loads(f)
+    graph = {}
+    for i in list_graphs:
+        graph[(int(i[0]),int(i[1]))]=int(i[2])
+
     args.topk = min(len(list_entities), args.topk)
 
     tokenizer = AutoTokenizer.from_pretrained(args.encoder_model)
     model = AutoModel.from_pretrained(args.encoder_model).to('cuda')
-    vec_entities = encode_batch_contriever(list_entities, tokenizer, model)
-    torch.save(vec_entities, args.entity_vector_save_path)
+    vec_entities = torch.load(args.entity_vector_path)    
 
-    dataset = load_dataset('json', data_files=args.dataset_query_ner_path)["train"]
-    dataset = dataset.map(partial(map_nearest,space=vec_entities,model=model,tokenizer=tokenizer,topk=args.topk))
+    ap = []
+    for idx, le in enumerate(list_entities):
+        a,b = get_sorted_indices(le)
+        a = a[:args.topk]
+        b = b[:args.topk]
+        for i in range(len(a)):
+            if(b[i]>args.threshold):
+                graph[(idx, a[i])]=b[i]
+        # ap.append({"index":idx,"relevant_index":a,"relevant_score":b})
+
+
+    with open(args.graph_save_path,'w') as f:
+        json.dump([[str(k[0]),str(k[1]),str(v)]for k,v in graph.items()],f)
+    # dataset = load_dataset('json', data_files=args.dataset_query_ner_path)["train"]
+    # dataset = dataset.map(partial(map_nearest,space=vec_entities,model=model,tokenizer=tokenizer,topk=args.topk))
 
 
 

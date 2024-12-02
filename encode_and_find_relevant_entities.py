@@ -57,8 +57,8 @@ if __name__=="__main__":
     parser.add_argument("--entity_vector_save_path", type=str, default="data/hotpotqa_entity_vector.pt", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--relevant_entity_save_path", type=str, default="data/hotpotqa_query_ner_relevant.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--encoder_model", type=str, default="facebook/contriever", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
-    parser.add_argument("--topk", type=str, default="facebook/contriever", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
-    
+    parser.add_argument("--topk", type=int, default=6, help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+
     args = parser.parse_args()
     with open(args.dataset_entity_path, 'r') as f:
         list_entities = json.loads(f)
