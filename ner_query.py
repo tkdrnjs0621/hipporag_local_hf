@@ -92,7 +92,7 @@ def map_json_dict(row):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Full Run")
-    parser.add_argument('--dataset_path', type=str, default='data/hotpotqa_dev_query_20.jsonl')
+    parser.add_argument('--dataset_path', type=str, default='data/hotpotqa_dev_query_1000.jsonl')
     parser.add_argument('--model_path', type=str, default='meta-llama/Llama-3.1-8B-Instruct', help='Specific model name')
     parser.add_argument("--save_path", type=str, default="data/hotpotqa_query_ner.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     
