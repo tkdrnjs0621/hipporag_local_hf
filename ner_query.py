@@ -58,7 +58,7 @@ def decode(example, tokenizer, feature):
     return {feature: text}
 
 def map_messages(row):
-    txt = row["passage"]
+    txt = row["question"]
     messages = messages_ner+[{"role":"user","content":query_prompt_template.format(txt)}]
     row["messages"]=messages
     return row
@@ -87,12 +87,12 @@ def extract_json_dict(text):
 
 def map_json_dict(row):
     extracted = extract_json_dict(row["output"])
-    row['entities']= extracted["named_entities"] if extracted!='' else []
+    row['entities']= extracted["named_entities"] if extracted!='' and 'named_entities' in extracted else ['']
     return row
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Full Run")
-    parser.add_argument('--dataset_path', type=str, default='data/hotpotqa_dev_query_full.jsonl')
+    parser.add_argument('--dataset_path', type=str, default='data/hotpotqa_dev_query_20.jsonl')
     parser.add_argument('--model_path', type=str, default='meta-llama/Llama-3.1-8B-Instruct', help='Specific model name')
     parser.add_argument("--save_path", type=str, default="data/hotpotqa_query_ner.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     
@@ -111,7 +111,7 @@ if __name__=="__main__":
     tokenizer.pad_token = tokenizer.eos_token
     model.eval()
 
-    dataset = load_dataset('json', data_files=args.dataset_path)["train"].select(range(30))
+    dataset = load_dataset('json', data_files=args.dataset_path)["train"]
 
     dataset = dataset.map(map_messages)
     dataset = dataset.map(partial(build_prompt, tokenizer=tokenizer),num_proc=args.num_proc)
@@ -121,6 +121,6 @@ if __name__=="__main__":
     dataset = dataset.add_column("output_ids", output_ids)  # type: ignore
     dataset = dataset.map(partial(decode, tokenizer=tokenizer, feature="output"), num_proc=args.num_proc)
     dataset = dataset.map(map_json_dict, num_proc=args.num_proc)
-    dataset = dataset.select_columns(["title","passage","entities"])
+    dataset = dataset.select_columns(["id","question","answer","gold_titles","entities"])
 
     dataset.to_json(args.save_path, orient="records", lines=True)

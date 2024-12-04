@@ -110,12 +110,12 @@ def extract_json_dict(text):
 
 def map_json_dict(row):
     extracted = extract_json_dict(row["output"])
-    row['entities']= extracted["named_entities"] if extracted!='' else []
+    row['entities']= extracted["named_entities"] if extracted!='' and 'named_entities' in extracted else []
     return row
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Full Run")
-    parser.add_argument('--dataset_path', type=str, default='data/hotpotqa_dev_t2p.jsonl')
+    parser.add_argument('--dataset_path', type=str, default='data/hotpotqa_dev_t2p_1000.jsonl')
     parser.add_argument('--model_path', type=str, default='meta-llama/Llama-3.1-8B-Instruct', help='Specific model name')
     parser.add_argument("--save_path", type=str, default="data/hotpotqa_passage_ner.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     
@@ -134,7 +134,7 @@ if __name__=="__main__":
     tokenizer.pad_token = tokenizer.eos_token
     model.eval()
 
-    dataset = load_dataset('json', data_files=args.dataset_path)["train"].select(range(10))
+    dataset = load_dataset('json', data_files=args.dataset_path)["train"]#.select(range(10))
 
     dataset = dataset.map(map_messages)
     dataset = dataset.map(partial(build_prompt, tokenizer=tokenizer),num_proc=args.num_proc)

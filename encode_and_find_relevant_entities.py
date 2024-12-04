@@ -61,7 +61,7 @@ if __name__=="__main__":
 
     args = parser.parse_args()
     with open(args.dataset_entity_path, 'r') as f:
-        list_entities = json.loads(f)
+        list_entities = json.loads(f.readline())
 
     args.topk = min(len(list_entities), args.topk)
 
@@ -73,7 +73,7 @@ if __name__=="__main__":
     dataset = load_dataset('json', data_files=args.dataset_query_ner_path)["train"]
     dataset = dataset.map(partial(map_nearest,space=vec_entities,model=model,tokenizer=tokenizer,topk=args.topk))
 
-
+    dataset.to_json(args.relevant_entity_save_path, orient="records", lines=True)
 
 
 

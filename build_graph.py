@@ -44,14 +44,17 @@ if __name__=="__main__":
                 pass
             else:
                 clean_triple = [processing_phrases(p) for p in triple]
-
-                total_triples.append(clean_triple)
+                print(clean_triple)
+                if('' in clean_triple):
+                    break
+                total_triples.append(tuple(clean_triple))
                 total_entities.append(clean_triple[0])
                 total_entities.append(clean_triple[2])
 
-                tmp_doc_triples.append(clean_triple)
+                tmp_doc_triples.append(tuple(clean_triple))
                 tmp_doc_entities.append(clean_triple[0])
                 tmp_doc_entities.append(clean_triple[2])
+
         doc_entities.append(list(set(tmp_doc_entities)))
         doc_triples.append(list(set(tmp_doc_triples)))
     

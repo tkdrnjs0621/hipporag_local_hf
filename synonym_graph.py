@@ -60,17 +60,20 @@ if __name__=="__main__":
     parser.add_argument('--graph_path', type=str, default='data/hotpotqa_graph_nonsym.json')
     parser.add_argument("--graph_save_path", type=str, default="data/hotpotqa_graph_sym.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--topk", type=int, default=6, help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--threshold", type=float, default=0.8, help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--encoder_model", type=str, default="facebook/contriever", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     
     args = parser.parse_args()
     with open(args.dataset_entity_path, 'r') as f:
-        list_entities = json.loads(f)
-
+        list_entities = json.loads(f.readline())
 
     with open(args.graph_path, 'r') as f:
-        list_graphs = json.loads(f)
+        list_graphs = json.loads(f.readline())
     graph = {}
     for i in list_graphs:
-        graph[(int(i[0]),int(i[1]))]=int(i[2])
+        x=list_entities.index(i[0])
+        y=list_entities.index(i[1])
+        graph[(x,y)]=int(i[2])
 
     args.topk = min(len(list_entities), args.topk)
 
@@ -79,8 +82,8 @@ if __name__=="__main__":
     vec_entities = torch.load(args.entity_vector_path)    
 
     ap = []
-    for idx, le in enumerate(list_entities):
-        a,b = get_sorted_indices(le)
+    for idx, le in tqdm(enumerate(list_entities),total=len(list_entities)):
+        a,b = get_sorted_indices(vec_entities, le,model,tokenizer)
         a = a[:args.topk]
         b = b[:args.topk]
         for i in range(len(a)):
