@@ -18,15 +18,17 @@ import igraph as ig
 import pandas as pd
 import numpy as np
 
-def rank_docs(row, top_k, graph, list_entities, entity_to_num_doc, doc_entity_map, damping):
+def rank_docs(row, top_k, graph, list_entities, entity_to_num_doc, doc_entity_map, damping, rqnodesonly):
 
     all_phrase_weights = np.zeros(len(list_entities))
     entity_ids = [a[0] for a in row['nearest_entities']]
     if(len(entity_ids)>0):
         for phrase_id in entity_ids:
             all_phrase_weights[phrase_id]= 1 / entity_to_num_doc[phrase_id] if entity_to_num_doc[phrase_id]!=0 else 1
-
-        pageranked_probs = graph.personalized_pagerank(vertices=range(len(list_entities)), damping=damping, directed=False, weights='weight', reset=all_phrase_weights, implementation='prpack')
+        if(rqnodesonly):
+            pageranked_probs=all_phrase_weights
+        else:
+            pageranked_probs = graph.personalized_pagerank(vertices=range(len(list_entities)), damping=damping, directed=False, weights='weight', reset=all_phrase_weights, implementation='prpack')
         doc_ranks = doc_entity_map.dot(pageranked_probs)
     else:
         doc_ranks = np.ones(doc_entity_map.shape[0])
@@ -34,9 +36,6 @@ def rank_docs(row, top_k, graph, list_entities, entity_to_num_doc, doc_entity_ma
     sorted_doc_ids = np.argsort(doc_ranks, kind='mergesort')[::-1]
     row['ranked_idx']  =  sorted_doc_ids.tolist()[:top_k]
     return row
-
-def processing_phrases(phrase):
-    return re.sub('[^A-Za-z0-9 ]', ' ', phrase.lower()).strip()
 
 def textify_result(row,list_docs,list_entities):
     row['retrieved_titles']= [list_docs[idx] for idx in row['ranked_idx']]
@@ -47,10 +46,12 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Full Run")
     parser.add_argument('--dataset_query_path', type=str, default='data/hotpotqa_query_ner_relevant.jsonl')
     parser.add_argument("--dataset_graph_path", type=str, default="data/hotpotqa_graph_sym.json", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
-    parser.add_argument("--dataset_openie_path", type=str, default="data/hotpotqa_passage_openie.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--dataset_t2p_path", type=str, default="data/hotpotqa_dev_t2p.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--dataset_document_entity_map_path", type=str, default="data/hotpotqa_doc_ent_map.json", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--dataset_entity_path", type=str, default="data/hotpotqa_entity_number.json", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--save_path", type=str, default="data/result.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--rqnodesonly", action='store_true', help="")
+    parser.add_argument('--topks', type=int, nargs='+', default=['2','5','10','20'], help="A list of numbers")
     
     args = parser.parse_args()
     
@@ -58,8 +59,8 @@ if __name__=="__main__":
 
     query = load_dataset('json', data_files=args.dataset_query_path)["train"]
 
-    oie = load_dataset('json', data_files=args.dataset_openie_path)["train"]
-    list_docs = [row['title'] for row in oie]
+    t2p = load_dataset('json', data_files=args.dataset_openie_path)["train"]
+    list_docs = [row['title'] for row in t2p]
 
     with open(args.dataset_entity_path, 'r') as f:
         list_entities = json.loads(f.readline())
@@ -91,6 +92,6 @@ if __name__=="__main__":
     #entity_to_num_doc = {k:len(v) for k,v in entity_to_doc.items()}
     entity_to_num_doc = [len(entity_to_doc[k]) if k in entity_to_doc.keys() else 0 for k in range(len(list_entities))]
     
-    result = query.map(partial(rank_docs, top_k=5, graph=graph_st, list_entities=list_entities, entity_to_num_doc=entity_to_num_doc, doc_entity_map=doc_entity_map, damping=0.85))
+    result = query.map(partial(rank_docs, top_k=5, graph=graph_st, list_entities=list_entities, entity_to_num_doc=entity_to_num_doc, doc_entity_map=doc_entity_map, damping=0.85, rqnodesonly=args.rqnodesonly))
     result = result.map(partial(textify_result, list_docs=list_docs, list_entities=list_entities))
     result.to_json(args.save_path, orient="records", lines=True)
