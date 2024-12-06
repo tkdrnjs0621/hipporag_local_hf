@@ -161,9 +161,9 @@ def map_entity(row):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Full Run")
-    parser.add_argument('--dataset_path', type=str, default='data/hotpotqa_dev_t2p.jsonl')
+    parser.add_argument('--dataset_path', type=str, default='data/2wikimultihopqa_dev_t2p.jsonl')
     parser.add_argument('--model_path', type=str, default='meta-llama/Llama-3.1-8B-Instruct', help='Specific model name')
-    parser.add_argument("--save_path", type=str, default="data/hotpotqa_passage_ner.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--save_path", type=str, default="data/2wikimultihopqa_passage_ner.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--ner_opt", choices=['entityrag','hipporag_original'], default='entityrag', help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     
     parser.add_argument("--batch_size", type=int, default=8, help="batch size for inference")
