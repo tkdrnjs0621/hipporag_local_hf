@@ -21,7 +21,7 @@ def mean_pooling(token_embeddings, mask):
     sentence_embeddings = token_embeddings.sum(dim=1) / mask.sum(dim=1)[..., None]
     return sentence_embeddings
 
-def encode_batch_contriever(data, tokenizer, model, batch_size=128):
+def encode_batch(data, tokenizer, model, batch_size=128):
     embeddings = []
     with torch.no_grad():
         for i in tqdm(range(0, len(data), batch_size)):
@@ -52,22 +52,22 @@ def map_nearest(row,space,model,tokenizer,topk):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Full Run")
-    parser.add_argument('--dataset_entity_path', type=str, default='data/hotpotqa_entity_number.json')
-    parser.add_argument("--dataset_query_ner_path", type=str, default="data/hotpotqa_query_ner.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
-    parser.add_argument("--entity_vector_save_path", type=str, default="data/hotpotqa_entity_vector.pt", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
-    parser.add_argument("--relevant_entity_save_path", type=str, default="data/hotpotqa_query_ner_relevant.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument('--dataset_entity_path', type=str, default='data/entityrag/musique_entity_list.json')
+    parser.add_argument("--dataset_query_ner_path", type=str, default="data/musique_query_ner.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--entity_vector_save_path", type=str, default="data/entityrag/musique_entity_vector.pt", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--relevant_entity_save_path", type=str, default="data/entityrag/musique_query_ner_relevant.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--encoder_model", type=str, default="facebook/contriever", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
-    parser.add_argument("--topk", type=int, default=6, help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--topk", type=int, default=-1, help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
 
     args = parser.parse_args()
     with open(args.dataset_entity_path, 'r') as f:
         list_entities = json.loads(f.readline())
 
-    args.topk = min(len(list_entities), args.topk)
+    args.topk = min(len(list_entities), args.topk) if args.topk!=-1 else len(list_entities)
 
     tokenizer = AutoTokenizer.from_pretrained(args.encoder_model)
     model = AutoModel.from_pretrained(args.encoder_model).to('cuda')
-    vec_entities = encode_batch_contriever(list_entities, tokenizer, model)
+    vec_entities = encode_batch(list_entities, tokenizer, model)
     torch.save(vec_entities, args.entity_vector_save_path)
 
     dataset = load_dataset('json', data_files=args.dataset_query_ner_path)["train"]

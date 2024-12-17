@@ -22,9 +22,9 @@ def processing_phrases(phrase):
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Full Run")
     parser.add_argument('--dataset_openie_path', type=str, default='data/hotpotqa_passage_openie.jsonl')
-    parser.add_argument("--entity_number_save_path", type=str, default="data/hotpotqa_entity_number.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
-    parser.add_argument("--document_entity_map_save_path", type=str, default="data/hotpotqa_doc_ent_map.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
-    parser.add_argument("--graph_save_path", type=str, default="data/hotpotqa_graph_nonsym.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--entity_number_save_path", type=str, default="data/hipporag/hotpotqa_entity_list.json", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--document_entity_map_save_path", type=str, default="data/hipporag/hotpotqa_doc_ent_map.json", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--graph_save_path", type=str, default="data/hipporag/hotpotqa_graph_nonsym.json", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     
     args = parser.parse_args()
     openie_file = []
@@ -36,7 +36,7 @@ if __name__=="__main__":
     total_entities = []
     doc_entities = []
     doc_triples = []
-    for doc_idx, row in enumerate(openie_file):
+    for doc_idx, row in tqdm(enumerate(openie_file),total=len(openie_file)):
         tmp_doc_triples=[]
         tmp_doc_entities=[]
         for triple in row["extracted_triples"]:
@@ -44,7 +44,7 @@ if __name__=="__main__":
                 pass
             else:
                 clean_triple = [processing_phrases(p) for p in triple]
-                print(clean_triple)
+                # print(clean_triple)
                 if('' in clean_triple):
                     break
                 total_triples.append(tuple(clean_triple))
@@ -62,13 +62,13 @@ if __name__=="__main__":
     total_entities = list(set(total_entities))
 
     doc_entity_map = {} # (doc id, entity id)->occurence
-    for doc_idx, entities in enumerate(doc_entities):
+    for doc_idx, entities in tqdm(enumerate(doc_entities),total=len(doc_entities)):
         for entity in entities:
             entity_idx = total_entities.index(entity)
             doc_entity_map[(doc_idx,entity_idx)]=doc_entity_map.get((doc_idx,entity_idx),0)+1
 
     graph = {} # (entity id, entit id) -> 1/0
-    for doc_idx, triples in enumerate(doc_triples):
+    for doc_idx, triples in tqdm(enumerate(doc_triples),total=len(doc_triples)):
         for triple in triples:
             graph[(triple[0],triple[2])] = graph.get((triple[0],triple[2]),0)+1
             graph[(triple[2],triple[0])] = graph.get((triple[2],triple[0]),0)+1

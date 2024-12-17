@@ -54,11 +54,11 @@ def map_nearest(row,space,model,tokenizer,topk):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Full Run")
-    parser.add_argument('--dataset_entity_path', type=str, default='data/hotpotqa_entity_number.json')
-    parser.add_argument("--entity_vector_path", type=str, default="data/hotpotqa_entity_vector.pt", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument('--dataset_entity_path', type=str, default='data/hipporag/hotpotqa_entity_list.json')
+    parser.add_argument("--entity_vector_path", type=str, default="data/hipporag/hotpotqa_entity_vector.pt", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
 
-    parser.add_argument('--graph_path', type=str, default='data/hotpotqa_graph_nonsym.json')
-    parser.add_argument("--graph_save_path", type=str, default="data/hotpotqa_graph_sym.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
+    parser.add_argument('--graph_path', type=str, default='data/hipporag/hotpotqa_graph_nonsym.json')
+    parser.add_argument("--graph_save_path", type=str, default="data/hipporag/hotpotqa_graph_sym.json", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--topk", type=int, default=6, help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--threshold", type=float, default=0.8, help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--encoder_model", type=str, default="facebook/contriever", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
@@ -70,9 +70,13 @@ if __name__=="__main__":
     with open(args.graph_path, 'r') as f:
         list_graphs = json.loads(f.readline())
     graph = {}
-    for i in list_graphs:
-        x=list_entities.index(i[0])
-        y=list_entities.index(i[1])
+
+    entity_to_index = {entity: idx for idx, entity in enumerate(list_entities)}
+    for i in tqdm(list_graphs,desc='building graph'):
+        # x=list_entities.index(i[0])
+        # y=list_entities.index(i[1])
+        x = entity_to_index[i[0]]
+        y = entity_to_index[i[1]]
         graph[(x,y)]=int(i[2])
 
     args.topk = min(len(list_entities), args.topk)
@@ -89,6 +93,8 @@ if __name__=="__main__":
         for i in range(len(a)):
             if(b[i]>args.threshold):
                 graph[(idx, a[i])]=b[i]
+            else:
+                break
         # ap.append({"index":idx,"relevant_index":a,"relevant_score":b})
 
 

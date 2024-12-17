@@ -51,7 +51,7 @@ if __name__=="__main__":
     parser.add_argument("--dataset_entity_path", type=str, default="data/hotpotqa_entity_number.json", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--save_path", type=str, default="data/result.jsonl", help="path to inference data to evaluate (e.g. inference/baseline/zero_v1/Llama-3.1-8B-Instruct)")
     parser.add_argument("--rqnodesonly", action='store_true', help="")
-    parser.add_argument('--topks', type=int, nargs='+', default=['2','5','10','20'], help="A list of numbers")
+    parser.add_argument('--topk_max', type=int, default=20, help="A list of numbers")
     
     args = parser.parse_args()
     
@@ -59,7 +59,7 @@ if __name__=="__main__":
 
     query = load_dataset('json', data_files=args.dataset_query_path)["train"]
 
-    t2p = load_dataset('json', data_files=args.dataset_openie_path)["train"]
+    t2p = load_dataset('json', data_files=args.dataset_t2p_path)["train"]
     list_docs = [row['title'] for row in t2p]
 
     with open(args.dataset_entity_path, 'r') as f:
@@ -92,6 +92,6 @@ if __name__=="__main__":
     #entity_to_num_doc = {k:len(v) for k,v in entity_to_doc.items()}
     entity_to_num_doc = [len(entity_to_doc[k]) if k in entity_to_doc.keys() else 0 for k in range(len(list_entities))]
     
-    result = query.map(partial(rank_docs, top_k=5, graph=graph_st, list_entities=list_entities, entity_to_num_doc=entity_to_num_doc, doc_entity_map=doc_entity_map, damping=0.85, rqnodesonly=args.rqnodesonly))
+    result = query.map(partial(rank_docs, top_k=args.topk_max, graph=graph_st, list_entities=list_entities, entity_to_num_doc=entity_to_num_doc, doc_entity_map=doc_entity_map, damping=0.85, rqnodesonly=args.rqnodesonly))
     result = result.map(partial(textify_result, list_docs=list_docs, list_entities=list_entities))
     result.to_json(args.save_path, orient="records", lines=True)

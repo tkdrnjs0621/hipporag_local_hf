@@ -59,10 +59,10 @@ def format_question(dataset, question_format, dataset_type):
     
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Dataset Builder")
-    parser.add_argument("--original_data_path", type=str, default="raw_data/2wikimultihopqa_dev_20k.jsonl", help="model name for evaluation")
-    parser.add_argument("--query_save_path", type=str, default="data/2wikimultihopqa_dev_query_1000.jsonl", help="model name for evaluation")
-    parser.add_argument("--t2p_save_path", type=str, default="data/2wikimultihopqa_dev_t2p.jsonl", help="model name for evaluation")
-    parser.add_argument("--dataset_type", default="2wikimultihopqa", choices=["2wikimultihopqa","musique","hotpotqa"],  help="model name for evaluation")
+    parser.add_argument("--original_data_path", type=str, default="raw_data/musique_dev_20k.jsonl", help="model name for evaluation")
+    parser.add_argument("--query_save_path", type=str, default="data/musique_dev_query_1000.jsonl", help="model name for evaluation")
+    parser.add_argument("--t2p_save_path", type=str, default="data/musique_dev_t2p.jsonl", help="model name for evaluation")
+    parser.add_argument("--dataset_type", default="musique", choices=["2wikimultihopqa","musique","hotpotqa"],  help="model name for evaluation")
     parser.add_argument("--question_format", choices=["all","1000"], default="1000", help="model name for evaluation")
     
     args = parser.parse_args()
